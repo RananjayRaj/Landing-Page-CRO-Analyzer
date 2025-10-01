@@ -1,0 +1,178 @@
+{
+  "name": "Landing Page CRO Analyzer (Improved) - Updated",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Format HTML Report - more robust extraction + parsing\nconst getAiText = (itemJson) => {\n  // many nodes/models return different keys – try several fallbacks\n  const tries = [\n    // common Anthropic/Claude and Langchain shapes\n    itemJson.content?.[0]?.text,\n    itemJson.output_text,\n    itemJson.output?.[0]?.text,\n    itemJson.response,\n    itemJson.text,\n    itemJson.message,\n    // OpenAI style\n    itemJson.choices?.[0]?.message?.content,\n    itemJson.choices?.[0]?.text,\n    // full json string fallback\n    typeof itemJson === 'string' ? itemJson : null,\n    JSON.stringify(itemJson)\n  ];\n  for (const t of tries) if (t) return String(t);\n  return '';\n};\n\nconst aiResponse = getAiText($input.item.json) || '';\n\nlet analysis;\ntry {\n  // Try to extract JSON inside code fences\n  const fenceMatch = aiResponse.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/i);\n  const jsonLike = fenceMatch ? fenceMatch[1] : aiResponse;\n\n  // If it's plain text that looks like JSON, parse it.\n  // Trim to first/last braces to be safer\n  const firstBrace = jsonLike.indexOf('{');\n  const lastBrace = jsonLike.lastIndexOf('}');\n  const candidate = (firstBrace >= 0 && lastBrace > firstBrace) ? jsonLike.slice(firstBrace, lastBrace + 1) : jsonLike;\n  analysis = JSON.parse(candidate);\n} catch (e) {\n  // If parsing fails, keep a structured fallback so the report doesn't self-implode\n  analysis = {\n    summary: \"Analysis could not be parsed from the model response. The model output may not be valid JSON or was returned in an unexpected format.\",\n    issues_and_challenges: [{\n      issue: \"Model response parse error\",\n      impact: \"The formatting of the model response didn't match expectations (not valid JSON / not found).\"\n    }],\n    quick_wins: [\"Check the model output and ensure it returns JSON (optionally wrapped in ```json ... ```).\", \"Inspect the raw model output stored in the node output for debugging.\"],\n    recommendations: []\n  };\n}\n\nconst formatRecommendations = (recs) => {\n  if (!recs || recs.length === 0) return '<p>No recommendations available</p>';\n  return recs.map((rec, i) => `\n    <div style=\"margin: 20px 0; padding: 15px; border-left: 4px solid ${\n      rec.priority === 'high' ? '#ef4444' : \n      rec.priority === 'medium' ? '#f59e0b' : '#3b82f6'\n    }; background: #f9fafb; border-radius: 4px;\">\n      <div style=\"display: flex; gap: 10px; margin-bottom: 8px;\">\n        <span style=\"background: ${\n          rec.priority === 'high' ? '#fee2e2' : \n          rec.priority === 'medium' ? '#fef3c7' : '#dbeafe'\n        }; color: ${\n          rec.priority === 'high' ? '#991b1b' : \n          rec.priority === 'medium' ? '#92400e' : '#1e40af'\n        }; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;\">\n          ${String(rec.priority || 'medium').toUpperCase()}\n        </span>\n        <span style=\"background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;\">\n          ${rec.category || 'general'}\n        </span>\n      </div>\n      <h3 style=\"margin: 10px 0; color: #1e293b;\">${i + 1}. ${rec.issue || 'Issue'}</h3>\n      <p style=\"color: #475569; margin: 8px 0;\"><strong>Fix:</strong> ${rec.recommendation || ''}</p>\n      <p style=\"color: #059669; margin: 8px 0; font-style: italic;\"><strong>Impact:</strong> ${rec.expected_impact || ''}</p>\n    </div>\n  `).join('');\n};\n\nconst formatIssues = (issues) => {\n  if (!issues || issues.length === 0) return '<p>No issues identified</p>';\n  return issues.map((item, i) => `\n    <div style=\"margin: 10px 0; padding: 10px; background: #fff7ed; border-left: 3px solid #f59e0b; border-radius: 4px;\">\n      <strong>${i + 1}. ${item.issue}</strong><br/>\n      <span style=\"color: #78350f;\">${item.impact}</span>\n    </div>\n  `).join('');\n};\n\nconst competitiveSection = analysis.competitive_comparison ? `\n  <h2>🏆 Competitive Comparison</h2>\n  <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;\">\n    <div style=\"background: #dcfce7; padding: 15px; border-radius: 8px; border-left: 4px solid #16a34a;\">\n      <h3 style=\"margin-top: 0; color: #166534;\">✅ Your Advantages</h3>\n      <ul>\n        ${(analysis.competitive_comparison.your_advantages || []).map(a => `<li>${a}</li>`).join('')}\n      </ul>\n    </div>\n    <div style=\"background: #fee2e2; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;\">\n      <h3 style=\"margin-top: 0; color: #991b1b;\">⚠️ Competitor Advantages</h3>\n      <ul>\n        ${(analysis.competitive_comparison.competitor_advantages || []).map(a => `<li>${a}</li>`).join('')}\n      </ul>\n    </div>\n  </div>\n  <div style=\"background: #eff6ff; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; margin: 20px 0;\">\n    <h3 style=\"margin-top: 0; color: #1e40af;\">💡 Market Opportunities</h3>\n    <ul>\n      ${(analysis.competitive_comparison.opportunities || []).map(o => `<li>${o}</li>`).join('')}\n    </ul>\n  </div>\n` : '';\n\nconst htmlReport = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #f5f5f5; }\n    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n    .header { border-bottom: 3px solid #3b82f6; padding-bottom: 20px; margin-bottom: 30px; }\n    h1 { color: #1e40af; margin: 0; }\n    .url { color: #6b7280; font-size: 14px; margin-top: 5px; word-break: break-all; }\n    .summary { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0; border-radius: 4px; }\n    .quick-wins { background: #dcfce7; border-left: 4px solid #16a34a; padding: 20px; margin: 20px 0; border-radius: 4px; }\n    .quick-wins ul { margin: 10px 0; padding-left: 20px; }\n    .quick-wins li { margin: 8px 0; }\n    h2 { color: #1e40af; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-top: 40px; }\n    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; text-align: center; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>🎯 Landing Page CRO Analysis</h1>\n      <div class=\"url\">${$('Form Trigger1').first().json['Landing Page URL']}</div>\n    </div>\n\n    <div class=\"summary\">\n      <h2 style=\"margin-top: 0;\">📊 Executive Summary</h2>\n      <p>${analysis.summary || 'Analysis completed'}</p>\n    </div>\n\n    <h2>⚠️ Issues & Challenges</h2>\n    ${formatIssues(analysis.issues_and_challenges)}\n\n    <div class=\"quick-wins\">\n      <h2 style=\"margin-top: 0;\">⚡ Quick Wins (< 30 minutes)</h2>\n      <ul>\n        ${(analysis.quick_wins || []).map(win => `<li>${win}</li>`).join('')}\n      </ul>\n    </div>\n\n    <h2>💡 Detailed Recommendations</h2>\n    ${formatRecommendations(analysis.recommendations)}\n\n    ${competitiveSection}\n\n    <div class=\"footer\">\n      <p>Generated by AI-Powered CRO Analyzer | ${new Date().toLocaleString()}</p>\n      <p>🤖 Powered by n8n + Claude</p>\n    </div>\n  </div>\n</body>\n</html>\n`;\n\nreturn [{\n  json: {\n    ...analysis,\n    html_report: htmlReport,\n    analyzed_url: $('Form Trigger1').first().json['Landing Page URL'],\n    raw_model_text: aiResponse\n  }\n}];\n"
+      },
+      "id": "72c04bdc-2006-4372-8ed3-8fa6c599cfe1",
+      "name": "Format HTML Report",
+      "type": "n8n-nodes-base.code",
+      "position": [1504, 1152],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "formTitle": "🎯 Landing Page CRO Analyzer",
+        "formDescription": "Get AI-powered conversion optimization insights for your landing page",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Landing Page URL",
+              "placeholder": "https://example.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Competitor URLs (comma-separated)",
+              "fieldType": "textarea",
+              "placeholder": "https://competitor1.com, https://competitor2.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "22f09b37-aaea-4d6b-8337-4be9eb254dde",
+      "name": "Form Trigger1",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [1360, 656],
+      "typeVersion": 2.2,
+      "notes": "Webhook form to collect landing page URLs for analysis"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.NOTIFICATION_EMAIL }}",
+        "subject": "Here's the full CRO Audit of your Landing Page 😊",
+        "message": "={{ $json.html_report }}",
+        "options": {
+          "contentType": "html"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1696, 1152],
+      "id": "f1d61075-b8b9-41b1-9beb-770373d473b4",
+      "name": "Send Email Report",
+      "notes": "Sends the formatted HTML report via Gmail"
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1808, 656],
+      "id": "e6bdc10a-4b29-46da-b217-d55d02e5426d",
+      "name": "Fetch Page Content",
+      "notes": "Uses Jina.ai Reader to extract clean content from URLs"
+    },
+    {
+      "parameters": {
+        "jsCode": "const mainUrl = $json['Landing Page URL'];\nconst competitorUrls = $json['Competitor URLs (comma-separated)'] || '';\n\nconst urls = [mainUrl];\nif (competitorUrls) {\n  urls.push(...competitorUrls.split(',').map(u => u.trim()).filter(u => u));\n}\n\nreturn urls.map(url => ({ json: { url, is_main: url === mainUrl } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1568, 656],
+      "id": "b2606f72-190a-43ee-9ea1-0fcab5b42495",
+      "name": "Split URLs",
+      "notes": "Splits main URL and competitor URLs into separate items"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1504, 912],
+      "id": "3f421303-e386-4a04-86d0-f2416d66e061",
+      "name": "Aggregate",
+      "notes": "Combines all fetched pages back into single item"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are a professional Conversion Rate Optimization expert. Analyze the landing page(s) below and provide detailed CRO recommendations.",
+              "role": "assistant"
+            },
+            {
+              "content": "=You are a professional Conversion Rate Optimization expert. Analyze the landing page(s) below.\n\n{% if $json.count > 1 %}\n**COMPARISON MODE: Analyzing {{ $json.count }} pages**\n\n{% for item in $json.items %}\n---\n**Page {{ loop.index }}{% if item.is_main %} (YOUR PAGE){% else %} (Competitor){% endif %}:**\nURL: {{ item.url }}\n\nContent:\n{{ item.body.substring(0, 2500) }}\n---\n{% endfor %}\n\n{% else %}\n**SINGLE PAGE ANALYSIS**\n\nURL: {{ $json.items[0].url }}\nContent: {{ $json.items[0].body.substring(0, 3000) }}\n\n{% endif %}\n\nIMPORTANT: Return ONLY JSON. Surround the JSON with triple backticks and the word json:\n\nOUTPUT FORMAT:\n{\n  \"summary\": \"2-3 sentence summary\",\n  \"issues_and_challenges\": [{\"issue\": \"problem\", \"impact\": \"why it matters\"}],\n  \"quick_wins\": [\"fix 1\", \"fix 2\", \"fix 3\"],\n  \"recommendations\": [{\n    \"priority\": \"high\",\n    \"category\": \"headline\",\n    \"issue\": \"problem\",\n    \"recommendation\": \"solution\",\n    \"expected_impact\": \"benefit\"\n  }]{% if $json.count > 1 %},\n  \"competitive_comparison\": {\n    \"your_advantages\": [\"advantage 1\"],\n    \"competitor_advantages\": [\"what they do better\"],\n    \"opportunities\": [\"gap to exploit\"]\n  }{% endif %}\n}"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.3,
+          "maxToolsIterations": 15
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [2032, 912],
+      "id": "dd4c0262-b145-47a8-a879-5f138c7d9b76",
+      "name": "Message a model",
+      "notes": "Claude Sonnet 4.5 analyzes landing pages and generates CRO insights"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare for Claude - robust extractor that avoids \"[object Object]\"\nfunction extractTextFromValue(val, depth = 0, maxDepth = 3) {\n  if (val == null) return '';\n  if (typeof val === 'string') return val;\n  if (typeof val === 'number' || typeof val === 'boolean') return String(val);\n  if (Array.isArray(val)) {\n    if (depth >= maxDepth) return '[array]';\n    return val.map(v => extractTextFromValue(v, depth + 1, maxDepth)).filter(Boolean).join('\\n\\n');\n  }\n  if (typeof val === 'object') {\n    if (depth >= maxDepth) {\n      try {\n        return JSON.stringify(val);\n      } catch (e) {\n        return '[object]';\n      }\n    }\n\n    const preferredKeys = ['pageContent','text','data','content','html','innerText','outerHTML','body','excerpt'];\n    for (const k of preferredKeys) {\n      if (val[k]) {\n        return extractTextFromValue(val[k], depth + 1, maxDepth);\n      }\n    }\n\n    const pieces = [];\n    for (const k of Object.keys(val)) {\n      try {\n        const v = val[k];\n        const extracted = extractTextFromValue(v, depth + 1, maxDepth);\n        if (extracted) pieces.push(`${k}: ${extracted}`);\n      } catch (e) {\n        // skip problem props\n      }\n      if (pieces.join('\\n\\n').length > 14000) break;\n    }\n\n    if (pieces.length) return pieces.join('\\n\\n');\n\n    try {\n      return JSON.stringify(val);\n    } catch (e) {\n      return '[object]';\n    }\n  }\n\n  return '';\n}\n\nconst all = $input.all();\n\nconst formatted = all.map(item => {\n  let bodyContent = '';\n\n  if (Array.isArray(item.json.body)) {\n    bodyContent = item.json.body.map(el => extractTextFromValue(el)).filter(Boolean).join('\\n\\n');\n  } else if (Array.isArray(item.json.items)) {\n    bodyContent = item.json.items.map(i => extractTextFromValue(i)).filter(Boolean).join('\\n\\n');\n  } else if (item.json.body) {\n    bodyContent = extractTextFromValue(item.json.body);\n  } else if (item.json.document && item.json.document[0]) {\n    bodyContent = extractTextFromValue(item.json.document[0].pageContent || item.json.document[0]);\n  } else if (item.json.data) {\n    bodyContent = extractTextFromValue(item.json.data);\n  } else if (item.json.pageContent) {\n    bodyContent = extractTextFromValue(item.json.pageContent);\n  } else if (item.json.text) {\n    bodyContent = extractTextFromValue(item.json.text);\n  } else {\n    bodyContent = extractTextFromValue(item.json);\n  }\n\n  bodyContent = String(bodyContent || '').trim();\n  bodyContent = bodyContent.replace(/\\[object Object\\]/g, '');\n\n  const MAX_LENGTH = 16000;\n  if (bodyContent.length > MAX_LENGTH) {\n    bodyContent = bodyContent.slice(0, MAX_LENGTH) + '\\n\\n...[truncated]';\n  }\n\n  return {\n    url: item.json.url || item.json.requestUrl || 'unknown',\n    is_main: item.json.is_main || false,\n    body: bodyContent,\n    raw_source: item.json\n  };\n});\n\nreturn [{ json: { items: formatted, count: formatted.length } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1776, 912],
+      "id": "a0e77b1a-8cfd-454a-af81-3720fbe8c14c",
+      "name": "Prepare for Claude",
+      "notes": "Extracts and formats page content for AI analysis"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Form Trigger1": {
+      "main": [[{"node": "Split URLs", "type": "main", "index": 0}]]
+    },
+    "Format HTML Report": {
+      "main": [[{"node": "Send Email Report", "type": "main", "index": 0}]]
+    },
+    "Fetch Page Content": {
+      "main": [[{"node": "Aggregate", "type": "main", "index": 0}]]
+    },
+    "Split URLs": {
+      "main": [[{"node": "Fetch Page Content", "type": "main", "index": 0}]]
+    },
+    "Aggregate": {
+      "main": [[{"node": "Prepare for Claude", "type": "main", "index": 0}]]
+    },
+    "Message a model": {
+      "main": [[{"node": "Format HTML Report", "type": "main", "index": 0}]]
+    },
+    "Prepare for Claude": {
+      "main": [[{"node": "Message a model", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "sanitized-version",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
