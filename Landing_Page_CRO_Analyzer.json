@@ -126,7 +126,7 @@
       "type": "@n8n/n8n-nodes-langchain.anthropic",
       "typeVersion": 1,
       "position": [2032, 912],
-      "id": "dd4c0262-b145-47a8-a879-5f138c7d9b76",
+      "id": "",
       "name": "Message a model",
       "notes": "Claude Sonnet 4.5 analyzes landing pages and generates CRO insights"
     },
