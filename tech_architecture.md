@@ -100,12 +100,7 @@ Send Email Report (Gmail Delivery)
 - **Email Service**: Gmail SMTP with OAuth2
 - **Workflow Engine**: n8n automation platform
 
-### Data Formats
-- **Internal Processing**: JSON throughout pipeline
-- **Input Format**: Form data or JSON webhook payload
-- **Output Format**: HTML email with embedded CSS
-
-## Security & Compliance
+## Security Considerations
 
 ### Authentication Management
 - **OAuth2 Implementation**: Secure Gmail integration
@@ -116,40 +111,3 @@ Send Email Report (Gmail Delivery)
 - **No Data Persistence**: Content processed in-memory only
 - **Temporary Storage**: Page content exists only during workflow execution
 - **Privacy Friendly**: No logging of analyzed URLs or content
-
-## Deployment Considerations
-
-### Environment Requirements
-- **n8n Version**: 1.0+ with JavaScript Code node support
-- **Node.js Runtime**: ES2020+ compatibility
-- **Memory Allocation**: Minimum 256MB for typical workflow execution
-- **API Rate Limits**: Claude API (token-based), Jina.ai (free tier limits)
-
-### Configuration Management
-- **Credential Storage**: Secure n8n credential management
-- **Environment Variables**: `NOTIFICATION_EMAIL` for recipient configuration
-- **Webhook Security**: Optional webhook authentication available
-
-### Scalability Considerations
-- **Concurrent Executions**: Single-threaded per execution
-- **URL Limits**: Optimized for 1 main page + 5 competitor pages
-- **Content Size**: Handles pages up to 16KB per URL (after extraction)
-- **Execution Time**: Typically 30-60 seconds per analysis
-
-## Maintenance & Support
-
-### Regular Maintenance Tasks
-- **Credential Renewal**: OAuth2 token refresh monitoring (Gmail)
-- **API Monitoring**: Claude API quota and performance tracking
-- **Content Extraction**: Monitor Jina.ai reliability and uptime
-
-### Troubleshooting Guide
-- **Content Extraction Failures**: Check Jina.ai accessibility to target URLs
-- **AI Analysis Errors**: Verify Claude API key and token availability
-- **Email Delivery Issues**: Validate Gmail OAuth2 configuration and permissions
-- **JSON Parsing Errors**: Review Claude response in `raw_model_text` field
-
-### Version Control & Updates
-- **Workflow Versioning**: n8n built-in version management
-- **Sanitized Exports**: All IDs and credentials removed for public sharing
-- **Testing Procedures**: Manual execution validation before production use
