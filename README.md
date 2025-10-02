@@ -1,110 +1,74 @@
-# 🎯 Landing-Page-CRO-Analyzer
-An AI-powered n8n workflow that analyzes landing pages and provides detailed Conversion Rate Optimization (CRO) recommendations using AI.
+# 🚀 Landing Page CRO Analyzer (n8n Workflow)
 
-**📋 Overview
+## Overview
+This n8n workflow performs automated **Conversion Rate Optimization (CRO) analysis** of landing pages.  
+It scrapes landing page content, passes it to an AI model (Anthropic Claude), and generates a **detailed CRO report** including:
+- Executive summary  
+- Issues & challenges  
+- Quick wins  
+- Detailed recommendations  
+- Competitive comparison (if competitor URLs are provided)  
+- HTML-formatted audit report (emailed automatically)  
+
+## 🔧 Architecture
+Refer to the included [Technical Architecture](./Technical-Architecture.md) file for details.  
+
+Simplified flow:
+Form Trigger → Split URLs → HTTP Request → Aggregate → Prepare Content → Claude Model → Format Report → Email Report
+
+## ✨ Features
+- **Multi-page comparison** (main vs competitors).  
+- **AI-powered insights** (headlines, CTAs, trust signals, value props).  
+- **Rich HTML report** automatically delivered via Gmail.  
+- **Configurable** for different AI models, email recipients, or content sources.  
+
+## 📦 Setup
+
+### Requirements
+- [n8n](https://n8n.io) v1.0+  
+- Node.js runtime ES2020+  
+- Accounts & credentials:
+  - **Anthropic API key** (Claude models)  
+  - **Gmail OAuth2** credentials (for sending email reports)
+
+### Installation
+1. Clone this repo:
+   ```bash
+   git clone https://github.com/yourusername/landing-page-cro-analyzer.git
+   cd landing-page-cro-analyzer
+
+2. Import the sanitized workflow JSON into n8n.
+3. Create .env file from .env.example.
+4. Configure credentials inside n8n for Gmail + Anthropic (use env variables).
+
+**Environment Variables
 **
-This workflow analyzes your landing pages and competitor pages to provide:
+See .env.example for the variables you need to configure.
 
-**Executive Summary** - Quick overview of key findings
-**Issues & Challenges** - Identified problems impacting conversions
-**Quick Wins **- Fast improvements you can implement in <30 minutes
-**Detailed Recommendations** - Prioritized action items with expected impact
-**Competitive Comparison **- How you stack up against competitors (optional)
-
-**✨ Features**
-
-**🤖 AI-Powered Analysis** using Claude Sonnet 4.5
-**📊 Beautiful HTML Reports **sent directly to your email
-**🔄 Competitor Comparison** - Analyze multiple pages simultaneously
-**🎨 Professional Formatting** with priority badges and visual hierarchy
-**⚡ Quick Wins** section for immediate actionable improvements
-**🏆 Competitive Intelligence** showing advantages and opportunities
-
-**🛠️ Prerequisites**
-
-**1. n8n instance** (self-hosted or cloud)
-**2. Anthropic API Key** (for Claude Sonnet 4.5)
-**3. Gmail Account** with OAuth2 setup in n8n
-**4. Jina.ai Reader **(free tier works fine - no API key required)
-
-**📦 Quick Start**
-
-1. Clone the repo and open your n8n instance
-2. Import the workflow: **Import → From File** → Landing-Page-CRO-Analyzer-Sanitized.json
-3. Create credentials in n8n (do NOT paste secrets into code nodes):
-
-- Anthropic API credential
-- Gmail OAuth2 credential
-
-
-4. Attach credentials via the n8n UI to the corresponding nodes:
-
-- Message a model → attach Anthropic credential
-- Send Email Report → attach Gmail credential
-
-5. Replace placeholders in node parameters within the n8n UI:
-
-NOTIFICATION_EMAIL → recipient email for report
-
-6. Activate the workflow
-7. Copy the webhook URL and start analyzing landing pages!
-
-**🚀 Usage
-****Web Form Method
+**▶️ Usage
 **
-1. Navigate to the webhook URL provided by n8n
-2. Enter your landing page URL
-3. (Optional) Add competitor URLs separated by commas
-4. Click Submit
-5. Receive detailed CRO analysis via email within 60 seconds
+- Open the form trigger URL provided by n8n.
 
-API Method
-bashcurl -X POST 'YOUR_N8N_WEBHOOK_URL' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "Landing Page URL": "https://yoursite.com",
-    "Competitor URLs (comma-separated)": "https://competitor1.com, https://competitor2.com"
-  }'
-**📊 Report Structure
-**The generated report includes:
+- Enter:
 
-**1. Executive Summary** - High-level overview
-**2. Issues & Challenges** - Problems to address
-**3. Quick Wins** - Fast improvements (<30 min)
-**4. Detailed Recommendations **- Prioritized by High/Medium/Low
-**5. Competitive Comparison **(if competitors provided)
+  - Landing Page URL
+  - Competitor URLs (optional, comma-separated)
 
-**🔧 Configuration
+- Submit → Workflow runs → AI analysis → Email report delivered.
+
+**📧 Output
 **
-**- Email Recipients**: Set recipients
-**- Report Styling**: Edit HTML template in "Format HTML Report" node
+- Email with:
+  - Plain text summary
+  - Full HTML CRO report (executive summary, issues, quick wins, recommendations, competitor comparison)
 
-**🔐 Security Notes
+**🔒 Security
 **
-- Never commit real API keys or credentials to the repository
-- Store environment variables securely
-- If a secret was committed accidentally, revoke/rotate it immediately
+- All API keys and OAuth credentials are stored in n8n’s credential vault.
+- Example .env file provided — never commit real keys to source control.
 
-📝 Files
-
-- Landing-Page-CRO-Analyzer-Sanitized.json - Sanitized n8n workflow (importable)
-- .env.example - Example environment variables with placeholders
-- README.md - This file
-- Technical-Architecture.md - Detailed architecture documentation
-
-**📧 Support
-**For issues, questions, or suggestions:
-
-- Check the n8n community forum
-- Review Anthropic's documentation
-
-**💡 Use Cases
+**🛠️ Development
 **
-- **Marketing Teams** - Optimize campaign landing pages
-- **Product Managers** - Improve product pages
-- **Agencies** - Deliver client audits automatically
-- **E-commerce** - Enhance product and checkout pages
-- **SaaS Companies** - Boost signup page conversions
-
-📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+- Modify the Prepare for Claude node to adjust how raw HTML/text is cleaned.
+- Modify the Message a model node prompt for different output schemas.
+- Modify the Format HTML Report node for styling or branding.
