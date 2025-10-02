@@ -11,7 +11,7 @@ It scrapes landing page content, passes it to an AI model (Anthropic Claude), an
 - HTML-formatted audit report (emailed automatically)  
 
 ## 🔧 Architecture
-Refer to the included [Technical Architecture](./Technical-Architecture.md) file for details.  
+Refer to the included ([./Technical-Architecture.md](https://github.com/RananjayRaj/Landing-Page-CRO-Analyzer/blob/main/tech_architecture.md)) file for details.  
 
 Simplified flow:
 Form Trigger → Split URLs → HTTP Request → Aggregate → Prepare Content → Claude Model → Format Report → Email Report
