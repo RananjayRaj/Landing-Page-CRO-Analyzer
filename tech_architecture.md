@@ -27,7 +27,7 @@ This n8n workflow provides automated landing page Conversion Rate Optimization (
 - **Aggregation Node**: Combines all fetched pages into single payload for AI analysis
 
 ### 4. AI Analysis Engine
-- **Primary AI Model**: Claude Sonnet 4.5 for advanced CRO analysis
+- **Primary AI Model**: Claude Sonnet for advanced CRO analysis
 - **Analysis Framework**: Structured prompt engineering for consistent insights
   - Executive summary generation
   - Issues and challenges identification with impact assessment
