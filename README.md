@@ -1,8 +1,5 @@
-# Landing-Page-CRO-Analyzer
+# 🎯 Landing-Page-CRO-Analyzer
 An AI-powered n8n workflow that analyzes landing pages and provides detailed Conversion Rate Optimization (CRO) recommendations using AI.
-
-**🎯 Landing Page CRO Analyzer
-**An AI-powered landing page analysis tool built with n8n that provides comprehensive Conversion Rate Optimization (CRO) insights using Claude Sonnet 4.5.
 
 **📋 Overview
 **This workflow analyzes your landing pages and competitor pages to provide:
