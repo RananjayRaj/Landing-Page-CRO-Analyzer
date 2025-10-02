@@ -1,4 +1,4 @@
-# 🚀 Landing Page CRO Analyzer (n8n Workflow)
+# 🚀 Landing Page CRO Analyzer 
 
 ## Overview
 This n8n workflow performs automated **Conversion Rate Optimization (CRO) analysis** of landing pages.  
