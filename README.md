@@ -2,7 +2,8 @@
 An AI-powered n8n workflow that analyzes landing pages and provides detailed Conversion Rate Optimization (CRO) recommendations using AI.
 
 **📋 Overview
-**This workflow analyzes your landing pages and competitor pages to provide:
+**
+This workflow analyzes your landing pages and competitor pages to provide:
 
 **Executive Summary** - Quick overview of key findings
 **Issues & Challenges** - Identified problems impacting conversions
